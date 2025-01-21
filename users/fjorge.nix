@@ -1,11 +1,11 @@
-{ self, pkgs, lib, home-manager, ... }:
+{ outputs, pkgs, lib, home-manager, ... }:
 {
-  imports = [
-    home-manager.nixosModules.home-manager
-  ];
+  #imports = [
+  #  home-manager.nixosModules.home-manager
+  #];
 
   home-manager.users.fjorge = {
-    home.stateVersion = self.version;
+    home.stateVersion = outputs.version;
 
     programs.kitty = lib.mkForce {
       enable = true;

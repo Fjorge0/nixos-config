@@ -1,4 +1,4 @@
-{ self, config, pkgs, ... }:
+{ outputs, config, pkgs, ... }:
 {
   #
   # System Configuration
@@ -6,11 +6,19 @@
 
   nix.settings.experimental-features = [ "nix-command" "flakes" ];
 
-  # Allow UNFREE packages
-  nixpkgs.config = { allowUnfree = true; };
+  nixpkgs = {
+    # Allow UNFREE packages
+    config = { allowUnfree = true; };
+
+    # Overlay other packages
+    overlays = [
+      #outputs.overlays.unstable-packages
+      outputs.overlays.quartus
+    ];
+  };
 
   # NixOS version
-  system.stateVersion = self.version;
+  system.stateVersion = outputs.version;
 
   # Import other files
   imports = [
@@ -228,7 +236,15 @@
 
             lsp.nil_ls.setup(coq.lsp_ensure_capabilities())
 
-            lsp.pyright.setup(coq.lsp_ensure_capabilities())
+            lsp.pyright.setup(coq.lsp_ensure_capabilities({
+              settings = {
+                python = {
+                  linting = {
+                    pylintEnabled = true
+                  }
+                }
+              }
+            }))
 
             lsp.clangd.setup(coq.lsp_ensure_capabilities({
               cmd = {
@@ -322,6 +338,7 @@
             coq_nvim
             coq-artifacts
             coq-thirdparty
+            coc-pyright
             nvim-colorizer-lua
             guess-indent-nvim
             lsp_lines-nvim
@@ -503,7 +520,8 @@
     coreutils
     pkg-config
     imagemagick
-    python311
+    (python312.withPackages(python312Packages: with python312Packages; [compiledb requests numpy pylint]))
+    pyright
     pmd
     file
     patchelf
@@ -512,7 +530,6 @@
     libyaml
     tetex
     bundler
-    python311Packages.compiledb
     ctags
     texlab
     ffmpeg
@@ -521,16 +538,15 @@
     valgrind
     ncurses
 
+    # Class
+    quartus.quartus-prime-lite
+
     # Spork
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-good
     gpsd
     libgpiod
-    qt5Full
-    qt6.full
-    qt6.qtbase
-    qt5Full
-    libsForQt5.qt5.qtdeclarative
+    qt6Packages.full
     qtcreator
     can-utils
 
@@ -678,6 +694,8 @@
     bluetooth.enable = true;
   };
 
+  security.rtkit.enable = true;
+
   # systemD services
   services = {
     # iPhone USB hotspot
@@ -689,21 +707,36 @@
     # Firmware updater
     fwupd.enable = true;
 
+    # DBus impl
+    dbus.implementation = "broker";
+
     # Pipewire
     pipewire = {
       enable = true;
 
       # Allow pipewire to replace audio
       audio.enable = true;
-
       alsa.enable = true;
       alsa.support32Bit = true;
-
-      jack.enable = true;
-
       pulse.enable = true;
 
+      # Use wireplumber
       wireplumber.enable = true;
+
+      # Improve audio quality?
+      extraConfig.pipewire = {
+        "10-clock-rate" = {
+          "context.properties" = {
+            "default.clock.rate" = 44100;
+          };
+        };
+
+        "11-no-upmixing" = {
+          "stream.properties" = {
+            "channelmix.upmix" = false;
+          };
+        };
+      };
     };
 
     # Power saver
@@ -915,7 +948,7 @@
 
   # Network options
   networking = {
-    hostName = self.hostname;
+    hostName = outputs.hostname;
 
     networkmanager = {
       # Enable NetworkManager

@@ -1,20 +1,23 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
+    nixpkgs-quartus.url = "github:nixos/nixpkgs/nixos-22.05";
     home-manager.url = "github:nix-community/home-manager/release-24.11";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     waveforms.url = "github:liff/waveforms-flake";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
-  outputs = { self, nixpkgs, nixos-hardware, home-manager, waveforms, ... }@attrs: {
+  outputs = { self, nixpkgs, nixos-hardware, home-manager, waveforms, ... } @ inputs: let inherit (self) outputs; in {
     hostname = "fjorge-nixos-laptop";
     version = "24.11";
 
-    nixosConfigurations.${self.hostname} = nixpkgs.lib.nixosSystem {
+    overlays = import ./overlays.nix {inherit inputs;};
+
+    nixosConfigurations.${outputs.hostname} = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
 
-      specialArgs = attrs;
+      specialArgs = {inherit inputs outputs;};
 
       modules = [
         nixos-hardware.nixosModules.framework-12th-gen-intel
