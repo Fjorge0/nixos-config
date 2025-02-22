@@ -1,4 +1,4 @@
-{ outputs, config, pkgs, ... }:
+{ inputs, outputs, config, pkgs, ... }:
 {
   #
   # System Configuration
@@ -8,11 +8,11 @@
 
   nixpkgs = {
     # Allow UNFREE packages
-    config = { allowUnfree = true; };
+    config = { allowUnfree = true; allowBroken = false; };
 
     # Overlay other packages
     overlays = [
-      #outputs.overlays.unstable-packages
+      outputs.overlays.unstable
       outputs.overlays.quartus
     ];
   };
@@ -32,7 +32,8 @@
       "audit=0"
       "psmouse.synaptics_intertouch=0"
       ''acpi_osi="!Windows 2020"''
-    #  "resume_offset="
+      "usbcore.autosuspend=-1"
+      #  "resume_offset="
       "sysrq_always_enabled=1"
     ];
 
@@ -40,6 +41,12 @@
       "kernel.sysrq" = 244;
     };
 
+    # Kernel module options
+    /*extraModprobeConfig = ''
+      options iwlwifi 11n_disable=1 wd_disable=1
+    '';*/
+
+    # Bootloader options
     loader = {
       timeout = 1;
 
@@ -109,225 +116,8 @@
       viAlias = true;
 
       configure = {
-        customRC = ''
-          set clipboard+=unnamedplus
+        customRC = builtins.readFile "${inputs.configs}/programs/nvim/init.vim";
 
-          set number
-          set relativenumber
-          set list
-          set listchars=tab:→\ ,space:·,nbsp:␣,trail:•,precedes:«,extends:»
-
-          set tabstop=4
-          set shiftwidth=4
-
-          set scrolloff=2
-
-          vnoremap > >gv
-          vnoremap < <gv
-
-          nnoremap <leader>d "_d
-          xnoremap <leader>d "_d
-
-          nnoremap <CR> :noh<CR><CR>
-
-          let g:onedark_config = {
-            \ 'style': 'warmer',
-          \}
-          colorscheme onedark
-
-          set cursorcolumn
-          set cursorline
-
-          augroup cursorline
-                au!
-                au ColorScheme * hi clear CursorLine
-               \ | hi link CursorLine CursorColumn
-          augroup END
-
-          let g:vimtex_compiler_method = 'pdflatex'
-
-          au VimLeave * call nvim_cursor_set_shape("vertical-bar")
-
-          let g:coq_settings = {
-            \"auto_start": 'shut-up',
-            \"display": {
-              \"preview": {
-                \"border": [
-                  \["", "NormalFloat"],
-                  \["", "NormalFloat"],
-                  \["", "NormalFloat"],
-                  \[" ", "NormalFloat"],
-                  \["", "NormalFloat"],
-                  \["", "NormalFloat"],
-                  \["", "NormalFloat"],
-                  \[" ", "NormalFloat"] ]}}}
-
-          lua require'colorizer'.setup()
-
-          lua << EOF
-            require('guess-indent').setup {}
-            require("lsp_lines").setup()
-
-            -- Disable virtual_text since it's redundant due to lsp_lines.
-            vim.diagnostic.config({
-              virtual_text = false,
-            })
-
-            local todoCommentsConfig = require("todo-comments.config")
-
-            require("todo-comments").setup({
-              highlight = {
-                keyword = "fg",
-                after = "",
-              },
-              keywords = {
-                TODO = { icon = " ", color = "info" },
-                HACK = { icon = " ", color = "warning" },
-                WARN = { icon = " ", color = "warning", alt = { "WARNING", "XXX" } },
-                PERF = { icon = "󰅒 ", alt = { "OPTIM", "PERFORMANCE", "OPTIMIZE" } },
-                NOTE = { icon = "󰆈 ", color = "hint", alt = { "INFO" } },
-                TEST = { icon = "󰙨 ", color = "test", alt = { "TESTING", "PASSED", "FAILED" } },
-                REM  = { icon = "󰅍 ", color = "hint", alt = { "REQUIRES", "EFFECTS", "MODIFIES" } },
-              },
-            })
-
-            local lsp = require("lspconfig")
-            local configs = require("lspconfig.configs")
-            local util = require("lspconfig.util")
-            local coq = require("coq")
-
-            local remap = vim.api.nvim_set_keymap
-            local npairs = require('nvim-autopairs')
-
-            npairs.setup({ map_bs = false, map_cr = false })
-
-            vim.g.coq_settings = { keymap = { recommended = false } }
-
-            -- these mappings are coq recommended mappings unrelated to nvim-autopairs
-            remap('i', '<esc>', [[pumvisible() ? "<c-e><esc>" : "<esc>"]], { expr = true, noremap = true })
-            remap('i', '<c-c>', [[pumvisible() ? "<c-e><c-c>" : "<c-c>"]], { expr = true, noremap = true })
-            remap('i', '<tab>', [[pumvisible() ? "<c-n>" : "<tab>"]], { expr = true, noremap = true })
-            remap('i', '<s-tab>', [[pumvisible() ? "<c-p>" : "<bs>"]], { expr = true, noremap = true })
-
-            -- skip it, if you use another global object
-            _G.MUtils= {}
-
-            MUtils.CR = function()
-              if vim.fn.pumvisible() ~= 0 then
-                if vim.fn.complete_info({ 'selected' }).selected ~= -1 then
-                  return npairs.esc('<c-y>')
-                else
-                  return npairs.esc('<c-e>') .. npairs.autopairs_cr()
-                end
-              else
-                return npairs.autopairs_cr()
-              end
-            end
-            remap('i', '<cr>', 'v:lua.MUtils.CR()', { expr = true, noremap = true })
-
-            MUtils.BS = function()
-              if vim.fn.pumvisible() ~= 0 and vim.fn.complete_info({ 'mode' }).mode == 'eval' then
-                return npairs.esc('<c-e>') .. npairs.autopairs_bs()
-              else
-                return npairs.autopairs_bs()
-              end
-            end
-            remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
-
-            lsp.nil_ls.setup(coq.lsp_ensure_capabilities())
-
-            lsp.pyright.setup(coq.lsp_ensure_capabilities({
-              settings = {
-                python = {
-                  linting = {
-                    pylintEnabled = true
-                  }
-                }
-              }
-            }))
-
-            lsp.clangd.setup(coq.lsp_ensure_capabilities({
-              cmd = {
-                "clangd",
-                "--background-index",
-                "--completion-style=detailed",
-                "--clang-tidy",
-                "--header-insertion=iwyu",
-                "--all-scopes-completion=true",
-                "--function-arg-placeholders",
-                "--header-insertion-decorators",
-                "--suggest-missing-includes",
-                "--fallback-style=llvm",
-                "-j=4",
-              },
-              init_options = {
-                  clangdFileStatus = true,
-                  completeUnimported = true,
-                  usePlaceholders = true,
-                  clangdSemanticHighlighting = true,
-                  fallbackFlags = { "-Wall", "-Wpedantic" },
-              },
-            }))
-
-            require("clangd_extensions.inlay_hints").setup_autocmd()
-            require("clangd_extensions.inlay_hints").set_inlay_hints()
-
-            if not configs.ruby_lsp then
-              local enabled_features = {
-                "documentHighlights",
-                "documentSymbols",
-                "foldingRanges",
-                "selectionRanges",
-                "semanticHighlighting",
-                "formatting",
-                "codeActions",
-              }
-
-              configs.ruby_lsp = {
-                default_config = {
-                  cmd = { "bundle", "exec", "ruby-lsp" },
-                  filetypes = { "ruby" },
-                  root_dir = util.root_pattern("Gemfile", ".git"),
-                  init_options = {
-                    enabledFeatures = enabled_features,
-                  },
-                  settings = {},
-                },
-                commands = {
-                  FormatRuby = {
-                    function()
-                      vim.lsp.buf.format({
-                        name = "ruby_lsp",
-                        async = true,
-                      })
-                    end,
-                    description = "Format using ruby-lsp",
-                  },
-                },
-              }
-            end
-
-            lsp.ruby_lsp.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, capabilities = capabilities }))
-
-            require'nvim-treesitter.configs'.setup {
-              -- A list of parser names, or "all" (the listed parsers MUST always be installed)
-              --ensure_installed = { "c", "cpp", "python", "javascript", "markdown", "markdown_inline", "yaml", "json", "html", "make", "css", "html", "latex" },
-
-              -- Install parsers synchronously (only applied to `ensure_installed`)
-              sync_install = false,
-
-              -- Automatically install missing parsers when entering buffer
-              -- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-              auto_install = false,
-
-              highlight = {
-                enable = true,
-
-                additional_vim_regex_highlighting = false,
-              },
-            }
-          EOF
-        '';
         packages.myVimPackage = with pkgs.vimPlugins; {
           start = [
             onedark-nvim
@@ -357,6 +147,7 @@
             nvim-treesitter-parsers.css
             nvim-treesitter-parsers.html
             nvim-treesitter-parsers.latex
+            nvim-treesitter-parsers.verilog
           ];
         };
       };
@@ -378,68 +169,8 @@
         "interactivecomments"
         "promptsubst"
       ];
-      shellInit = ''
-        # Do menu-driven completion.
-        zstyle ':completion:*' menu select
-
-        # Color completion for some things.
-        # http://linuxshellaccount.blogspot.com/2008/12/color-completion-using-zsh-modules-on.html
-
-        # formatting and messages
-        # http://www.masterzen.fr/2009/04/19/in-love-with-zsh-part-one/
-        zstyle ':completion:*' verbose yes
-        zstyle ':completion:*:descriptions' format "%F{yellow}%B--- %d%b%f"
-        zstyle ':completion:*:messages' format '%d'
-        zstyle ':completion:*:warnings' format "%F{red}No matches for:%f %d"
-        zstyle ':completion:*:corrections' format '%B%d (errors: %e)%b'
-        zstyle ':completion:*' group-name '''
-        zstyle ':completion::complete:make::' tag-order 'targets' -
-      '';
-      promptInit = ''
-        # Git ahead and behind
-        # https://stackoverflow.com/a/77327346
-        function +vi-git-st() {
-          local ahead behind
-          local -a gitstatus
-
-          git rev-parse @{upstream} >/dev/null 2>&1 || return 0
-          local -a x=( $(git rev-list --left-right --count HEAD...@{upstream} ) )
-          
-          (( $x[1] )) && gitstatus+=( "%F{green}+''${x[1]}%f" )  # ahead count
-          (( $x[2] )) && gitstatus+=( "%F{red}-''${x[2]}%f" )  # behind count
-
-          hook_com[branch]+=''${(j:/:)gitstatus}
-        }
-
-        # Git tracked and untracked changes
-        function +vi-git-changes() {
-          local ahead behind
-          local -a stagedCount
-          local -a unstagedCount
-          local -a untrackedCount
-
-          unstagedCount=$(git ls-files -m --exclude-standard | wc -l)
-          untrackedCount=$(git ls-files -o --exclude-standard | wc -l)
-          stagedCount=$(git diff --cached --numstat | wc -l) # https://stackoverflow.com/a/3162492
-
-          hook_com[misc]="%F{green}''${stagedCount}S%F{yellow} ''${unstagedCount}M%F{red} ''${untrackedCount}U%f"
-        }
-
-        # VCS info
-        autoload -Uz vcs_info
-        zstyle ':vcs_info:*' enable git
-        zstyle ':vcs_info:git*' check-for-changes false
-        zstyle ':vcs_info:git*' get-revision true
-        zstyle ':vcs_info:git*+set-message:*' hooks git-st git-changes
-        zstyle ':vcs_info:git*' formats '%f(%s)-[%F{magenta}%b%f %F{yellow}#%7.7i%f]-[%m]'
-        zstyle ':vcs_info:git*' actionformats '%f(%s)-[%F{magenta}%b%f %F{yellow}#%7.7i%f]-[%m]-(%F{blue}%a%f)'
-        precmd () { vcs_info }
-
-        PROMPT=$'[%F{red}%D{%T %Z %e/%m/%Y}%f] [%F{cyan}%y%f] ''\${vcs_info_msg_0_}\n%F{green}%n%f@%F{magenta}%m%f %F{blue}%B%~%b%f %# '
-        RPROMPT='[%F{yellow}%?%f]'
-
-        TIMEFMT=$'%J\ntotal\t%*E\nuser\t%*U\nsys\t%*S\n\nCPU\t%P\nMemory\t%MkB\nI/O\t%I/%O'
-      '';
+      shellInit = builtins.readFile "${inputs.configs}/programs/zsh/shell.sh";
+      promptInit = builtins.readFile "${inputs.configs}/programs/zsh/prompt.sh";
     };
 
     git = {
@@ -520,7 +251,7 @@
     coreutils
     pkg-config
     imagemagick
-    (python312.withPackages(python312Packages: with python312Packages; [compiledb requests numpy pylint]))
+    (python312.withPackages(packages: with packages; [requests pandas seaborn sympy numpy pylint matplotlib]))
     pyright
     pmd
     file
@@ -567,19 +298,19 @@
     libreoffice
     hunspell
     hunspellDicts.en_GB-ise
-    discord-canary
 
-    #(pkgs.symlinkJoin {
-    #  name = "discord-canary";
-    #  paths = [ pkgs.discord-canary ];
-    #  buildInputs = [ pkgs.makeWrapper ];
-    #  postBuild = ''
-    #    wrapProgram $out/bin/DiscordCanary \
-    #      --add-flags "--enable-features=UseOzonePlatform --ozone-platform=wayland"
-    #    wrapProgram $out/bin/discordcanary \
-    #      --add-flags "--enable-features=UseOzonePlatform --ozone-platform=wayland"
-    #  '';
-    #})
+    (pkgs.symlinkJoin {
+      name = "discord";
+      paths = [ pkgs.discord ];
+      buildInputs = [ pkgs.makeWrapper ];
+      postBuild = ''
+        wrapProgram $out/bin/Discord \
+          --add-flags "--enable-features=UseOzonePlatform --ozone-platform=wayland"
+        wrapProgram $out/bin/discord \
+          --add-flags "--enable-features=UseOzonePlatform --ozone-platform=wayland"
+      '';
+    })
+
     (vscode-with-extensions.override {
       vscodeExtensions = with vscode-extensions; [
         ms-python.python
@@ -883,6 +614,9 @@
         # Enable experimental http3 support
         http3 = true;
 
+        # Disable cache
+        cache = false;
+
         # Configure sources
         sources = {
           public-resolvers = {
@@ -936,6 +670,17 @@
       settings = {
         server = {
           do-not-query-localhost = "no";
+
+          # Based on recommended settings in https://docs.pi-hole.net/guides/dns/unbound/#configure-unbound
+          harden-glue = true;
+          harden-dnssec-stripped = true;
+          use-caps-for-id = false;
+          prefetch = true;
+          edns-buffer-size = 1232;
+
+          # Custom settings
+          hide-identity = true;
+          hide-version = true;
         };
 
         forward-zone = {
@@ -955,7 +700,23 @@
       enable = true;
 
       dns = "none";
-      wifi.powersave = true;
+      wifi = {
+        powersave = false;
+        #backend = "iwd";
+      };
+    };
+
+    wireless = {
+      iwd = {
+        # Enable iwd
+        enable = false;
+
+        settings = {
+          IPv6 = {
+            Enabled = true;
+          };
+        };
+      };
     };
 
     useDHCP = false;
