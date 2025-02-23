@@ -4,6 +4,10 @@
       url = "path:./config";
       flake = false;
     };
+    users = {
+      url = "path:./users";
+      flake = false;
+    };
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-24.11";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
     nixpkgs-quartus.url = "github:nixos/nixpkgs/nixos-22.11";
@@ -37,15 +41,19 @@
         ./configuration.nix
 
         # Include the results of the hardware scan.
-        "${inputs.configs}/nix/hardware-configuration.nix"
+        "${inputs.configs}/nix/hardware.nix"
         # Firefox
-        "${inputs.configs}/nix/firefox-configuration.nix"
+        "${inputs.configs}/nix/firefox.nix"
         # power management
-        "${inputs.configs}/nix/power-configuration.nix"
-        # Noise cancellation through PipeWire
-        "${inputs.configs}/nix/pw_rnnoise.nix"
+        "${inputs.configs}/nix/power.nix"
+        # Networking
+        "${inputs.configs}/nix/networking.nix"
 
-        ./users/fjorge.nix
+        # Noise cancellation through PipeWire
+        "${inputs.configs}/nix/pw-rnnoise.nix"
+
+        # Users
+        "${inputs.users}/fjorge.nix"
       ];
     };
   };

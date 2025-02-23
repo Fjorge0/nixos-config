@@ -1,8 +1,25 @@
 { outputs, pkgs, lib, home-manager, ... }:
 {
-  #imports = [
-  #  home-manager.nixosModules.home-manager
-  #];
+  users.groups.fjorge = {};
+
+  users.users.fjorge = {
+    initialPassword = "password";
+    createHome = true;
+    isNormalUser = true;
+
+    group = "fjorge";
+    extraGroups = [
+      "wheel"
+      "adm"
+      "networkmanager"
+      "video"
+      "audio"
+      "plugdev"
+      "log"
+    ];
+
+    uid = 1000;
+  };
 
   home-manager.users.fjorge = {
     home.stateVersion = outputs.version;
