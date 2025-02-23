@@ -21,7 +21,7 @@
     hostname = "fjorge-nixos-laptop";
     version = "24.11";
 
-    overlays = import ./overlays.nix {inherit inputs;};
+    overlays = import "${inputs.configs}/nix/overlays.nix" {inherit inputs;};
 
     nixosConfigurations.${outputs.hostname} = nixpkgs.lib.nixosSystem {
       system = "x86_64-linux";
@@ -39,9 +39,9 @@
         { environment.systemPackages = [ ccsstudio.packages.x86_64-linux.default ]; }
 
         ./configuration.nix
-
         # Include the results of the hardware scan.
-        "${inputs.configs}/nix/hardware.nix"
+        ./hardware-configuration.nix
+
         # Firefox
         "${inputs.configs}/nix/firefox.nix"
         # power management
