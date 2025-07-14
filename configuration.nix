@@ -20,9 +20,11 @@
   # NixOS version
   system.stateVersion = outputs.version;
 
+  # Enable rewrite of nixos-rebuild
+  system.rebuild.enableNg = true;
+
   # Import other files
-  imports = [
-  ];
+  imports = [ ];
 
   # Boot and Kernel configuration
   boot = {
@@ -117,7 +119,11 @@
       viAlias = true;
 
       configure = {
-        customRC = builtins.readFile "${inputs.configs}/programs/nvim/init.lua";
+        customRC = ''
+          lua << EOF
+          ${builtins.readFile "${inputs.configs}/programs/nvim/init.lua"}
+          EOF
+        '';
 
         packages.myVimPackage = with pkgs.vimPlugins; {
           start = [
@@ -332,6 +338,9 @@
     obs-studio-plugins.obs-pipewire-audio-capture
     celluloid
     libsForQt5.skanpage
+
+    # Minecraft
+    prismlauncher
   ];
 
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
