@@ -86,6 +86,7 @@
       preferences = {
         "browser.tabs.closeWindowWithLastTab" = false;
         "identity.fxaccounts.enabled" = false;
+        "browser.tabs.groups.enabled" = true;
       };
       
       # Extensions
@@ -116,23 +117,27 @@
       viAlias = true;
 
       configure = {
-        customRC = builtins.readFile "${inputs.configs}/programs/nvim/init.vim";
+        customRC = builtins.readFile "${inputs.configs}/programs/nvim/init.lua";
 
         packages.myVimPackage = with pkgs.vimPlugins; {
           start = [
             onedark-nvim
-            nvim-lspconfig
-            vim-nix
+
             nvim-autopairs
-            clangd_extensions-nvim
+            guess-indent-nvim
+            indent-blankline-nvim
+            todo-comments-nvim
+
+            nvim-colorizer-lua
+
+            nvim-lspconfig
+            lsp_lines-nvim
             coq_nvim
             coq-artifacts
             coq-thirdparty
             coc-pyright
-            nvim-colorizer-lua
-            guess-indent-nvim
-            lsp_lines-nvim
-            todo-comments-nvim
+            vim-nix
+            clangd_extensions-nvim
 
             nvim-treesitter
             nvim-treesitter-parsers.c

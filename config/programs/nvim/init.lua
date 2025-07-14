@@ -1,58 +1,85 @@
-set clipboard+=unnamedplus
+-- Tie vim clipboard to system
+vim.opt.clipboard = "unnamedplus"
 
-set number
-set relativenumber
-set list
-set listchars=tab:→\ ,space:·,nbsp:␣,trail:•,precedes:«,extends:»
+-- Cosmetic options
+vim.opt.number = true
+vim.opt.relativenumber = true
+vim.opt.list = true
+vim.opt.listchars = {
+	tab = '→─',
+	space = '·',
+	nbsp = '␣',
+	trail = '•',
+	precedes = '«',
+	extends = '»'
+}
 
-set tabstop=4
-set shiftwidth=4
+-- Tab and indent widths
+vim.opt.tabstop = 4
+vim.opt.shiftwidth = 4
 
-set scrolloff=2
+-- Scroll line padding
+vim.opt.scrolloff = 2
 
-vnoremap > >gv
-vnoremap < <gv
+-- Allows < and > for indenting
+vim.keymap.set("v", ">", ">gv", { noremap = true })
+vim.keymap.set("v", "<", "<gv", { noremap = true })
 
-nnoremap <leader>d "_d
-xnoremap <leader>d "_d
+-- Stop d from copying to clipboard
+vim.keymap.set({"x", "n"}, "<leader>d", "_d", { noremap = true })
+--vim.keymap.set({"v", "n"}, "D", "_D", { noremap = true })
 
-nnoremap <CR> :noh<CR><CR>
+-- Use .. for clearing highlights
+--[[vim.keymap.del('n', '.')
+vim.keymap.set("n", "..", ":noh<CR><CR>", { noremap = true })]]--
 
-let g:onedark_config = {
-\ 'style': 'warmer',
-\}
-colorscheme onedark
+-- Colorscheme settings
+vim.opt.termguicolors = true
+vim.g.onedark_config = {
+	style = 'warmer'
+}
+vim.cmd('colorscheme onedark')
 
-set cursorcolumn
-set cursorline
+-- Lines marking cursor position
+vim.opt.cursorcolumn = true
+vim.opt.cursorline = true
 
+--[[vim.api.nvim_create_augroup('cursorline', )
 augroup cursorline
 	au!
 	au ColorScheme * hi clear CursorLine
 	\ | hi link CursorLine CursorColumn
-augroup END
+augroup END]]--
 
-let g:vimtex_compiler_method = 'pdflatex'
+-- Reset cursor on exit
+vim.api.nvim_create_autocmd('VimLeave', {
+	pattern = '*',
+	command = 'call nvim_cursor_set_shape("vertical-bar")'
+})
 
-au VimLeave * call nvim_cursor_set_shape("vertical-bar")
 
-let g:coq_settings = {
-	\"auto_start": 'shut-up',
-	\"display": {
-	\"preview": {
-	\"border": [
-		\["", "NormalFloat"],
-		\["", "NormalFloat"],
-		\["", "NormalFloat"],
-		\[" ", "NormalFloat"],
-		\["", "NormalFloat"],
-		\["", "NormalFloat"],
-		\["", "NormalFloat"],
-		\[" ", "NormalFloat"] ]}}}
+--[[        PLUGINS        ]]--
+-- Configure COQ border
+vim.g.coq_settings = {
+	auto_start = 'shut-up',
+	display = {
+		preview = {
+			border = {
+				{"", "NormalFloat"},
+				{"", "NormalFloat"},
+				{"", "NormalFloat"},
+				{" ", "NormalFloat"},
+				{"", "NormalFloat"},
+				{"", "NormalFloat"},
+				{"", "NormalFloat"},
+				{" ", "NormalFloat"}
+			}
+		}
+	}
+}
 
-lua require'colorizer'.setup()
-
-lua << EOF
+-- Setup certain plugins
+require'colorizer'.setup()
 require('guess-indent').setup {}
 require("lsp_lines").setup()
 
@@ -60,6 +87,9 @@ require("lsp_lines").setup()
 vim.diagnostic.config({
   virtual_text = false,
 })
+
+-- Set vimtex compiler
+vim.g.vimtex_compiler_method = 'pdflatex'
 
 local todoCommentsConfig = require("todo-comments.config")
 
@@ -122,6 +152,7 @@ MUtils.BS = function()
 end
 remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
 
+-- LSP setup
 lsp.nil_ls.setup(coq.lsp_ensure_capabilities())
 
 lsp.pyright.setup(coq.lsp_ensure_capabilities({
@@ -213,4 +244,15 @@ require'nvim-treesitter.configs'.setup {
 		additional_vim_regex_highlighting = false,
 	},
 }
-EOF
+
+-- Indent lines
+require("ibl").setup({
+	indent = {
+		highlight = { "Whitespace" },
+		char = "▎",
+		tab_char = "▎",
+	},
+	scope = {
+		highlight = { "MoreMsg" },
+	},
+})
