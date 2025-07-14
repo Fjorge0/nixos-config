@@ -1,11 +1,11 @@
 {
   inputs = {
     configs = {
-      url = "path:./config";
+      url = "path:config";
       flake = false;
     };
     users = {
-      url = "path:./users";
+      url = "path:users";
       flake = false;
     };
     nixpkgs.url = "https://channels.nixos.org/nixos-25.05/nixexprs.tar.xz";

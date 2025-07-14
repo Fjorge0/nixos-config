@@ -21,7 +21,7 @@
   system.stateVersion = outputs.version;
 
   # Enable rewrite of nixos-rebuild
-  system.rebuild.enableNg = true;
+  #system.rebuild.enableNg = true;
 
   # Import other files
   imports = [ ];
@@ -234,7 +234,7 @@
       noto-fonts
       noto-fonts-cjk-serif
       noto-fonts-cjk-sans
-      (nerdfonts.override { fonts = [ "JetBrainsMono" ]; })
+      nerd-fonts.jetbrains-mono
     ];
 
     fontconfig = {
@@ -299,7 +299,7 @@
 
     # Graphical themes
     papirus-icon-theme
-    vimix-cursor-theme
+    vimix-cursors
 
     # Graphical Applications
     qalculate-gtk
@@ -593,7 +593,7 @@
 
   # Localisation settings
   i18n = {
-    supportedLocales = [
+    extraLocales = [
       "C.UTF-8/UTF-8"
       "en_US.UTF-8/UTF-8"
       "en_GB.UTF-8/UTF-8"
@@ -602,7 +602,7 @@
       "zh_CN.UTF-8/UTF-8"
     ];
 
-    defaultLocale = "en_GB.utf8";
+    defaultLocale = "en_GB.UTF-8";
     extraLocaleSettings = {
       LC_TIME = "C.utf8";
       LC_MONETARY = "en_US.utf8";
