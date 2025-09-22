@@ -81,12 +81,6 @@ vim.g.coq_settings = {
 -- Setup certain plugins
 require'colorizer'.setup()
 require('guess-indent').setup {}
-require("lsp_lines").setup()
-
--- Disable virtual_text since it's redundant due to lsp_lines.
-vim.diagnostic.config({
-  virtual_text = false,
-})
 
 -- Set vimtex compiler
 vim.g.vimtex_compiler_method = 'pdflatex'
@@ -184,7 +178,7 @@ lsp.clangd.setup(coq.lsp_ensure_capabilities({
 		completeUnimported = true,
 		usePlaceholders = true,
 		clangdSemanticHighlighting = true,
-		fallbackFlags = { "-Wall", "-Wpedantic" },
+		fallbackFlags = { "-Wall", "-Wpedantic", "-std=c++20" },
 	},
 }))
 
@@ -228,6 +222,10 @@ end
 
 lsp.ruby_lsp.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, capabilities = capabilities }))
 
+lsp.verible.setup(coq.lsp_ensure_capabilities({
+	cmd = {'verible-verilog-ls', '--rules_config_search'},
+}))
+
 require'nvim-treesitter.configs'.setup {
 	-- A list of parser names, or "all" (the listed parsers MUST always be installed)
 	--ensure_installed = { "c", "cpp", "python", "javascript", "markdown", "markdown_inline", "yaml", "json", "html", "make", "css", "html", "latex" },
@@ -255,4 +253,11 @@ require("ibl").setup({
 	scope = {
 		highlight = { "MoreMsg" },
 	},
+})
+
+-- LSP messages on a separate line
+require("lsp_lines").setup()
+vim.diagnostic.config({
+  virtual_text = false,
+  virtual_lines = true,
 })

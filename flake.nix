@@ -1,16 +1,15 @@
 {
   inputs = {
     configs = {
-      url = "path:config";
+      url = "path:/etc/nixos/config/";
       flake = false;
     };
     users = {
-      url = "path:users";
+      url = "path:/etc/nixos/users/";
       flake = false;
     };
     nixpkgs.url = "https://channels.nixos.org/nixos-25.05/nixexprs.tar.xz";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    nixpkgs-quartus.url = "github:nixos/nixpkgs/nixos-22.11";
     home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";

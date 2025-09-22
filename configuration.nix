@@ -13,7 +13,6 @@
     # Overlay other packages
     overlays = [
       outputs.overlays.unstable
-      outputs.overlays.quartus
     ];
   };
 
@@ -21,7 +20,7 @@
   system.stateVersion = outputs.version;
 
   # Enable rewrite of nixos-rebuild
-  #system.rebuild.enableNg = true;
+  system.rebuild.enableNg = true;
 
   # Import other files
   imports = [ ];
@@ -253,6 +252,7 @@
     nil
     refind
     gcc
+    gdb
     stdenv
     lcov
     clang_17
@@ -281,9 +281,9 @@
     ncurses
 
     # Class
-    quartus.quartus-prime-lite
+    verible
 
-    # Spork
+    # Misc. Development
     gst_all_1.gstreamer
     gst_all_1.gst-plugins-good
     gpsd

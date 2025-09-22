@@ -6,11 +6,4 @@
       config.allowUnfree = true;
     };
   };
-
-  quartus = final: _prev: {
-    quartus = import inputs.nixpkgs-quartus {
-      system = final.system;
-      config.allowUnfree = true;
-    };
-  };
 }
