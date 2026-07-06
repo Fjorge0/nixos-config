@@ -103,7 +103,6 @@ require("todo-comments").setup({
 	},
 })
 
-local lsp = require("lspconfig")
 local configs = require("lspconfig.configs")
 local util = require("lspconfig.util")
 local coq = require("coq")
@@ -147,9 +146,9 @@ end
 remap('i', '<bs>', 'v:lua.MUtils.BS()', { expr = true, noremap = true })
 
 -- LSP setup
-lsp.nil_ls.setup(coq.lsp_ensure_capabilities())
+vim.lsp.config('nil_ls', { coq.lsp_ensure_capabilities() })
 
-lsp.pyright.setup(coq.lsp_ensure_capabilities({
+vim.lsp.config('pyright', coq.lsp_ensure_capabilities({
 	settings = {
 		python = {
 			linting = {
@@ -159,7 +158,7 @@ lsp.pyright.setup(coq.lsp_ensure_capabilities({
 	}
 }))
 
-lsp.clangd.setup(coq.lsp_ensure_capabilities({
+vim.lsp.config('clangd', coq.lsp_ensure_capabilities({
 	cmd = {
 		"clangd",
 		"--background-index",
@@ -178,12 +177,9 @@ lsp.clangd.setup(coq.lsp_ensure_capabilities({
 		completeUnimported = true,
 		usePlaceholders = true,
 		clangdSemanticHighlighting = true,
-		fallbackFlags = { "-Wall", "-Wpedantic", "-std=c++20" },
+		fallbackFlags = { "-Wall", "-Wpedantic", "-std=c++23" },
 	},
 }))
-
-require("clangd_extensions.inlay_hints").setup_autocmd()
-require("clangd_extensions.inlay_hints").set_inlay_hints()
 
 if not configs.ruby_lsp then
 	local enabled_features = {
@@ -196,7 +192,7 @@ if not configs.ruby_lsp then
 		"codeActions",
 	}
 
-	configs.ruby_lsp = {
+	vim.lsp.config('ruby_lsp', {
 		default_config = {
 			cmd = { "bundle", "exec", "ruby-lsp" },
 			filetypes = { "ruby" },
@@ -217,31 +213,14 @@ if not configs.ruby_lsp then
 				description = "Format using ruby-lsp",
 			},
 		},
-	}
+	})
 end
 
-lsp.ruby_lsp.setup(coq.lsp_ensure_capabilities({ on_attach = on_attach, capabilities = capabilities }))
+vim.lsp.config('ruby_lsp', coq.lsp_ensure_capabilities({ on_attach = on_attach, capabilities = capabilities }))
 
-lsp.verible.setup(coq.lsp_ensure_capabilities({
+vim.lsp.config('verible', coq.lsp_ensure_capabilities({
 	cmd = {'verible-verilog-ls', '--rules_config_search'},
 }))
-
-require'nvim-treesitter.configs'.setup {
-	-- A list of parser names, or "all" (the listed parsers MUST always be installed)
-	--ensure_installed = { "c", "cpp", "python", "javascript", "markdown", "markdown_inline", "yaml", "json", "html", "make", "css", "html", "latex" },
-
-	-- Install parsers synchronously (only applied to `ensure_installed`)
-	sync_install = false,
-
-	-- Automatically install missing parsers when entering buffer
-	-- Recommendation: set to false if you don't have `tree-sitter` CLI installed locally
-	auto_install = false,
-
-	highlight = {
-		enable = true,
-		additional_vim_regex_highlighting = false,
-	},
-}
 
 -- Indent lines
 require("ibl").setup({

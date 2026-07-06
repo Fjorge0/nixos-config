@@ -8,16 +8,16 @@
       url = "path:/etc/nixos/users/";
       flake = false;
     };
-    nixpkgs.url = "https://channels.nixos.org/nixos-25.05/nixexprs.tar.xz";
+    nixpkgs.url = "https://channels.nixos.org/nixos-26.05/nixexprs.tar.xz";
     nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
-    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     nixos-hardware.url = "github:NixOS/nixos-hardware/master";
   };
 
   outputs = { self, nixpkgs, nixos-hardware, home-manager, ... } @ inputs: let inherit (self) outputs; in {
     hostname = "fjorge-nixos-laptop";
-    version = "25.05";
+    version = "26.05";
 
     overlays = import "${inputs.configs}/nix/overlays.nix" {inherit inputs;};
 
@@ -46,7 +46,7 @@
         "${inputs.configs}/nix/networking.nix"
 
         # Noise cancellation through PipeWire
-        "${inputs.configs}/nix/pw-rnnoise.nix"
+        "${inputs.configs}/nix/pw-noise.nix"
 
         # Users
         "${inputs.users}/fjorge.nix"

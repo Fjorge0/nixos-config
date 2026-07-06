@@ -1,5 +1,8 @@
 { inputs, outputs, config, pkgs, ... }:
 {
+  # NOTE: TEMPORARY FIX nixpkgs@499166
+  documentation.doc.enable = false;
+
   #
   # System Configuration
   #
@@ -18,9 +21,6 @@
 
   # NixOS version
   system.stateVersion = outputs.version;
-
-  # Enable rewrite of nixos-rebuild
-  system.rebuild.enableNg = true;
 
   # Import other files
   imports = [ ];
@@ -72,6 +72,19 @@
 
   # Configurable Packages
   programs = {
+    xwayland = {
+      enable = true;
+    };
+
+    nix-ld = {
+      enable = true;
+
+      libraries = with pkgs; [
+        stdenv.cc
+        util-linux
+      ];
+    };
+
     dconf.enable = true;
 
     steam = {
@@ -99,7 +112,7 @@
           };
           "Bitwarden@bitwarden.com" = {
             "installation_mode" = "force_installed";
-            "install_url" = "https://addons.mozilla.org/firefox/downloads/file/4246600/";
+            "install_url" = "https://addons.mozilla.org/firefox/downloads/latest/bitwarden-password-manager/latest.xpi";
           };
         };
 
@@ -144,20 +157,20 @@
             vim-nix
             clangd_extensions-nvim
 
-            nvim-treesitter
-            nvim-treesitter-parsers.c
-            nvim-treesitter-parsers.cpp
-            nvim-treesitter-parsers.python
-            nvim-treesitter-parsers.javascript
-            nvim-treesitter-parsers.markdown
-            nvim-treesitter-parsers.yaml
-            nvim-treesitter-parsers.json
-            nvim-treesitter-parsers.make
-            nvim-treesitter-parsers.cpp
-            nvim-treesitter-parsers.css
-            nvim-treesitter-parsers.html
-            nvim-treesitter-parsers.latex
-            nvim-treesitter-parsers.verilog
+#           nvim-treesitter
+#           nvim-treesitter-parsers.c
+#           nvim-treesitter-parsers.cpp
+#           nvim-treesitter-parsers.python
+#           nvim-treesitter-parsers.javascript
+#           nvim-treesitter-parsers.markdown
+#           nvim-treesitter-parsers.yaml
+#           nvim-treesitter-parsers.json
+#           nvim-treesitter-parsers.make
+#           nvim-treesitter-parsers.cpp
+#           nvim-treesitter-parsers.css
+#           nvim-treesitter-parsers.html
+#           nvim-treesitter-parsers.latex
+#           nvim-treesitter-parsers.systemverilog
           ];
         };
       };
@@ -216,7 +229,6 @@
 
       qemu = {
         swtpm.enable = true;
-        ovmf.enable = true;
 
         runAsRoot = true;
       };
@@ -252,31 +264,38 @@
     nil
     refind
     gcc
+    boost
     gdb
     stdenv
     lcov
-    clang_17
-    clang-tools_17
+    clang_20
+    llvmPackages_20.clang-tools
     cmake
     gnumake
     coreutils
     pkg-config
     imagemagick
-    (python312.withPackages(packages: with packages; [requests pandas seaborn sympy numpy pylint matplotlib]))
+
+    (python3.withPackages(packages: with packages; [
+      requests pandas seaborn sympy numpy pylint matplotlib
+      # Nvim COQ dependencies
+      pynvim-pp pyyaml std2
+    ]))
     pyright
+
     pmd
     file
     patchelf
-    ruby_3_2
-    rubyPackages_3_2.ruby-lsp
+    ruby_4_0
+    rubyPackages_4_0.ruby-lsp
     libyaml
     tetex
     bundler
     ctags
     texlab
     ffmpeg
-    wineWowPackages.waylandFull
-    linuxPackages_latest.perf
+    wineWow64Packages.waylandFull
+    perf
     valgrind
     ncurses
 
@@ -288,7 +307,6 @@
     gst_all_1.gst-plugins-good
     gpsd
     libgpiod
-    qt6Packages.full
     qtcreator
     can-utils
 
@@ -302,8 +320,7 @@
     vimix-cursors
 
     # Graphical Applications
-    qalculate-gtk
-    librewolf
+    qalculate-qt
     gimp
     kitty
     libreoffice
@@ -322,25 +339,17 @@
       '';
     })
 
-    (vscode-with-extensions.override {
-      vscodeExtensions = with vscode-extensions; [
-        ms-python.python
-        ms-vsliveshare.vsliveshare
-        ms-vscode.cpptools
-        ms-pyright.pyright
-        llvm-vs-code-extensions.vscode-clangd
-        vadimcn.vscode-lldb
-      ];
-    })
     wl-clipboard
     wl-clipboard-x11
     obs-studio
     obs-studio-plugins.obs-pipewire-audio-capture
     celluloid
-    libsForQt5.skanpage
+    kdePackages.skanpage
 
-    # Minecraft
+    # Misc.
     prismlauncher
+    blender
+    prusa-slicer
   ];
 
   environment.plasma6.excludePackages = with pkgs.kdePackages; [
@@ -348,6 +357,7 @@
     konsole
     kate
     elisa
+    discover
   ];
 
   /*
@@ -414,6 +424,7 @@
     bluetooth.enable = true;
   };
 
+  # Allow Pipewire to use realtime scheduler
   security.rtkit.enable = true;
 
   # systemD services
@@ -443,15 +454,32 @@
       # Use wireplumber
       wireplumber.enable = true;
 
-      # Improve audio quality?
+      # Open ports for AirPlay
+      raopOpenFirewall = true;
+
       extraConfig.pipewire = {
-        "10-clock-rate" = {
+        # Enable AirPlay
+        "10-airplay" = {
+          "context.modules" = [
+            {
+              name = "libpipewire-module-raop-discover";
+
+              # increase the buffer size if you get dropouts/glitches
+              # args = {
+              #   "raop.latency.ms" = 500;
+              # };
+            }
+          ];
+        };
+
+        # Improve audio quality
+        "11-clock-rate" = {
           "context.properties" = {
             "default.clock.rate" = 44100;
           };
         };
 
-        "11-no-upmixing" = {
+        "12-no-upmixing" = {
           "stream.properties" = {
             "channelmix.upmix" = false;
           };
@@ -469,15 +497,15 @@
     };
 
     # Power buttons and laptop lids
-    logind = {
+    logind.settings.Login = {
       # Laptop lid events
-      lidSwitch = "hybrid-sleep";
-      lidSwitchExternalPower = "hybrid-sleep";
-      lidSwitchDocked = "hybrid-sleep";
+      HandleLidSwitch = "hybrid-sleep";
+      HandleLidSwitchExternalPower = "hybrid-sleep";
+      HandleLidSwitchDocked = "hybrid-sleep";
 
       # Power button events
-      extraConfig = "HandlePowerKey=hybrid-sleep
-                     HandlePowerKeyLongPress=poweroff";
+      HandlePowerKey = "hibernate";
+      HandlePowerKeyLongPress = "poweroff";
     };
 
     # Avahi
@@ -519,15 +547,9 @@
     # Automatic timezone setting daemon
     geoclue2 = {
       enable = true;
-      appConfig = {
-        "localtimed" = {
-          isAllowed = true;
-          isSystem = true;
-        };
-      };
     };
 
-    localtimed.enable = true;
+    automatic-timezoned.enable = true;
 
     # Libinput settings
     libinput = {
@@ -550,6 +572,8 @@
         enable = true;
         enableHidpi = true;
         wayland.enable = true;
+
+        settings.General.DisplayServer = "wayland";
       };
 
       defaultSession = "plasma";
@@ -616,7 +640,6 @@
 
       fcitx5 = {
         waylandFrontend = true;
-        plasma6Support = true;
 
         addons = with pkgs; [
           kdePackages.fcitx5-qt
@@ -635,6 +658,10 @@
     XDG_DATA_HOME   = "$HOME/.local/share";
     XDG_STATE_HOME  = "$HOME/.local/state";
     XDG_BIN_HOME    = "$HOME/.local/bin";
+  };
+
+  environment.sessionVariables = {
+    NIXOS_OZONE_WL = "1";
   };
 }
 

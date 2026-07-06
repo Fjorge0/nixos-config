@@ -11,6 +11,11 @@
         powersave = false;
         #backend = "iwd";
       };
+
+      plugins = with pkgs; [
+        networkmanager-openconnect
+        networkmanager-openvpn
+      ];
     };
 
     wireless = {
@@ -38,7 +43,7 @@
 
   services = {
     # DNS encryption
-    dnscrypt-proxy2 = {
+    dnscrypt-proxy = {
       enable = true;
 
       settings = {
